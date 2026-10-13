@@ -145,7 +145,7 @@ one_five_teams.sort_values("season")
 |   2018 | IND  |       1-5       |     10-6     |
 |   2020 | WAS  |       1-5       |     7-9      |
 
-Kansas City stands out because it won every remaining regular-season game. The Chiefs became the first NFL team to start 1-5, finish on a ten-game winning streak, and make the playoffs.
+Kansas City stands out because it won every remaining regular-season game. According to the [Kansas City Chiefs' account of the season](https://www.chiefs.com/news/andy-reid-named-101-awards-afc-coach-of-the-year-16897771), they became the first NFL team to start 1-5, finish on a ten-game winning streak, and make the playoffs.
 
 To me, the timing makes the result even more interesting. Andy Reid had become the Chiefs' head coach in 2013, and this comeback came one season before Kansas City began winning consecutive AFC West titles. Patrick Mahomes later became the full-time starting quarterback in 2018. Looking back, the 2015 season feels less like an isolated strange result and more like an early sign of the franchise's future success.
 
