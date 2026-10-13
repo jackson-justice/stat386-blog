@@ -13,7 +13,7 @@ By the end, you will be able to use pandas to group outcomes, calculate event ra
 
 ## Load and inspect the data
 
-The dataset contains one row for each NFL team after each week of a season from 1999 through 2025. Each row shows the team's record at that point and whether it eventually made the playoffs. We will start by importing pandas, reading the CSV file, and looking at the columns that matter most for this tutorial.
+The [dataset](https://github.com/jackson-justice/statigami/tree/main/nfl-championship-trajectories) contains one row for each NFL team after each week of a season from 1999 through 2025. Each row shows the team's record at that point and whether it eventually made the playoffs. We will start by importing pandas, reading the CSV file, and looking at the columns that matter most for this tutorial.
 
 ``` python
 import pandas as pd
