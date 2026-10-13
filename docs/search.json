@@ -1,10 +1,52 @@
 [
   {
-    "objectID": "index.html",
-    "href": "index.html",
-    "title": "tutorial_blog",
+    "objectID": "tutorial.html",
+    "href": "tutorial.html",
+    "title": "Finding Rare Outcomes with pandas: An NFL Playoff Example",
     "section": "",
-    "text": "This is a Quarto website.\nTo learn more about Quarto websites visit https://quarto.org/docs/websites."
+    "text": "import pandas as pd\n\ngames = pd.read_csv(\"data/team_week_records.csv\")\n\ngames[[\n    \"season\", \"team\", \"games_played\", \"record\", \"made_playoffs\"\n]].head()"
+  },
+  {
+    "objectID": "tutorial.html#load-and-inspect-the-data",
+    "href": "tutorial.html#load-and-inspect-the-data",
+    "title": "Finding Rare Outcomes with pandas: An NFL Playoff Example",
+    "section": "",
+    "text": "import pandas as pd\n\ngames = pd.read_csv(\"data/team_week_records.csv\")\n\ngames[[\n    \"season\", \"team\", \"games_played\", \"record\", \"made_playoffs\"\n]].head()"
+  },
+  {
+    "objectID": "tutorial.html#select-the-checkpoints",
+    "href": "tutorial.html#select-the-checkpoints",
+    "title": "Finding Rare Outcomes with pandas: An NFL Playoff Example",
+    "section": "Select the checkpoints",
+    "text": "Select the checkpoints\ncheckpoints = [2, 4, 6, 8]\n\ncheckpoint_games = games.loc[\n    games[\"games_played\"].isin(checkpoints)\n].copy()\n\ncheckpoint_games = checkpoint_games.sort_values([\n    \"season\", \"team\", \"week\"\n])\n\ncheckpoint_games = checkpoint_games.drop_duplicates([\n    \"season\", \"team\", \"games_played\"\n])"
+  },
+  {
+    "objectID": "tutorial.html#calculate-playoff-rates-by-record",
+    "href": "tutorial.html#calculate-playoff-rates-by-record",
+    "title": "Finding Rare Outcomes with pandas: An NFL Playoff Example",
+    "section": "Calculate playoff rates by record",
+    "text": "Calculate playoff rates by record\nrecord_summary = checkpoint_games.groupby([\n    \"games_played\", \"wins\", \"losses\", \"ties\", \"record\"\n]).agg(\n    team_seasons=(\"team\", \"count\"),\n    playoff_teams=(\"made_playoffs\", \"sum\")\n).reset_index()\n\nrecord_summary[\"playoff_rate\"] = (\n    record_summary[\"playoff_teams\"]\n    / record_summary[\"team_seasons\"]\n)"
+  },
+  {
+    "objectID": "tutorial.html#find-the-rare-playoff-paths",
+    "href": "tutorial.html#find-the-rare-playoff-paths",
+    "title": "Finding Rare Outcomes with pandas: An NFL Playoff Example",
+    "section": "Find the rare playoff paths",
+    "text": "Find the rare playoff paths\nsuccessful_starts = record_summary.loc[\n    record_summary[\"playoff_teams\"] &gt; 0\n].copy()\n\nrare_paths = (\n    successful_starts\n    .sort_values(\n        [\"games_played\", \"wins\", \"losses\"],\n        ascending=[True, True, False]\n    )\n    .groupby(\"games_played\")\n    .head(1)\n)\n\nrare_paths[[\n    \"games_played\",\n    \"record\",\n    \"team_seasons\",\n    \"playoff_teams\",\n    \"playoff_rate\"\n]]"
+  },
+  {
+    "objectID": "tutorial.html#investigate-the-1-5-teams",
+    "href": "tutorial.html#investigate-the-1-5-teams",
+    "title": "Finding Rare Outcomes with pandas: An NFL Playoff Example",
+    "section": "Investigate the 1-5 teams",
+    "text": "Investigate the 1-5 teams\none_five_teams = checkpoint_games.loc[\n    (checkpoint_games[\"games_played\"] == 6)\n    & (checkpoint_games[\"record\"] == \"1-5\")\n    & checkpoint_games[\"made_playoffs\"],\n    [\"season\", \"team\", \"record\", \"final_wins\", \"final_losses\"]\n]\n\none_five_teams.sort_values(\"season\")"
+  },
+  {
+    "objectID": "tutorial.html#visualize-the-six-game-checkpoint",
+    "href": "tutorial.html#visualize-the-six-game-checkpoint",
+    "title": "Finding Rare Outcomes with pandas: An NFL Playoff Example",
+    "section": "Visualize the six-game checkpoint",
+    "text": "Visualize the six-game checkpoint\nsix_game_summary = record_summary.loc[\n    (record_summary[\"games_played\"] == 6)\n    & (record_summary[\"ties\"] == 0)\n].sort_values(\"wins\").copy()\n\nsix_game_summary[\"playoff_rate_percent\"] = (\n    six_game_summary[\"playoff_rate\"] * 100\n)\n\nbar_colors = [\n    \"#E31837\" if record == \"1-5\" else \"#9AA0A6\"\n    for record in six_game_summary[\"record\"]\n]\n\nplayoff_chart = six_game_summary.plot.bar(\n    x=\"record\",\n    y=\"playoff_rate_percent\",\n    color=bar_colors,\n    legend=False\n)\n\nplayoff_chart.set_title(\n    \"NFL Playoff Rate by Record After Six Games, 1999-2025\"\n)\nplayoff_chart.set_xlabel(\"Record after six games\")\nplayoff_chart.set_ylabel(\"Teams that made the playoffs (%)\")"
   },
   {
     "objectID": "about.html",
@@ -12,5 +54,12 @@
     "title": "About",
     "section": "",
     "text": "About this site"
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "STAT 386 Blog",
+    "section": "",
+    "text": "This is a Quarto website.\nTo learn more about Quarto websites visit https://quarto.org/docs/websites."
   }
 ]

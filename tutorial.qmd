@@ -1,0 +1,120 @@
+---
+title: "Finding Rare Outcomes with pandas: An NFL Playoff Example"
+author: "Jackson Justice"
+---
+
+## Load and inspect the data
+
+```python
+import pandas as pd
+
+games = pd.read_csv("data/team_week_records.csv")
+
+games[[
+    "season", "team", "games_played", "record", "made_playoffs"
+]].head()
+```
+
+## Select the checkpoints
+
+```python
+checkpoints = [2, 4, 6, 8]
+
+checkpoint_games = games.loc[
+    games["games_played"].isin(checkpoints)
+].copy()
+
+checkpoint_games = checkpoint_games.sort_values([
+    "season", "team", "week"
+])
+
+checkpoint_games = checkpoint_games.drop_duplicates([
+    "season", "team", "games_played"
+])
+```
+
+## Calculate playoff rates by record
+
+```python
+record_summary = checkpoint_games.groupby([
+    "games_played", "wins", "losses", "ties", "record"
+]).agg(
+    team_seasons=("team", "count"),
+    playoff_teams=("made_playoffs", "sum")
+).reset_index()
+
+record_summary["playoff_rate"] = (
+    record_summary["playoff_teams"]
+    / record_summary["team_seasons"]
+)
+```
+
+## Find the rare playoff paths
+
+```python
+successful_starts = record_summary.loc[
+    record_summary["playoff_teams"] > 0
+].copy()
+
+rare_paths = (
+    successful_starts
+    .sort_values(
+        ["games_played", "wins", "losses"],
+        ascending=[True, True, False]
+    )
+    .groupby("games_played")
+    .head(1)
+)
+
+rare_paths[[
+    "games_played",
+    "record",
+    "team_seasons",
+    "playoff_teams",
+    "playoff_rate"
+]]
+```
+
+## Investigate the 1-5 teams
+
+```python
+one_five_teams = checkpoint_games.loc[
+    (checkpoint_games["games_played"] == 6)
+    & (checkpoint_games["record"] == "1-5")
+    & checkpoint_games["made_playoffs"],
+    ["season", "team", "record", "final_wins", "final_losses"]
+]
+
+one_five_teams.sort_values("season")
+```
+
+## Visualize the six-game checkpoint
+
+```python
+six_game_summary = record_summary.loc[
+    (record_summary["games_played"] == 6)
+    & (record_summary["ties"] == 0)
+].sort_values("wins").copy()
+
+six_game_summary["playoff_rate_percent"] = (
+    six_game_summary["playoff_rate"] * 100
+)
+
+bar_colors = [
+    "#E31837" if record == "1-5" else "#9AA0A6"
+    for record in six_game_summary["record"]
+]
+
+playoff_chart = six_game_summary.plot.bar(
+    x="record",
+    y="playoff_rate_percent",
+    color=bar_colors,
+    legend=False
+)
+
+playoff_chart.set_title(
+    "NFL Playoff Rate by Record After Six Games, 1999-2025"
+)
+playoff_chart.set_xlabel("Record after six games")
+playoff_chart.set_ylabel("Teams that made the playoffs (%)")
+```

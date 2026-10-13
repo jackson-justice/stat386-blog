@@ -3,12 +3,15 @@ project:
   output-dir: docs
 
 website:
-  title: "STAT 386 Tutorial Blog"
+  title: "STAT 386 Blog"
   navbar:
     left:
       - href: index.qmd
         text: Home
-      - about.qmd
+      - href: tutorial.qmd
+        text: Tutorial Blog
+      - href: about.qmd
+        text: About
 
 format:
   html:
@@ -17,6 +20,5 @@ format:
       - brand
     css: styles.css
     toc: true
-
 
 

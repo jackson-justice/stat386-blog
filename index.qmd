@@ -1,5 +1,5 @@
 ---
-title: "tutorial_blog"
+title: "STAT 386 Blog"
 ---
 
 This is a Quarto website.
