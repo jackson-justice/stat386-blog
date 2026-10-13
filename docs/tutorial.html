@@ -110,6 +110,35 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   }
 }</script>
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -159,12 +188,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#load-and-inspect-the-data" id="toc-load-and-inspect-the-data" class="nav-link active" data-scroll-target="#load-and-inspect-the-data">Load and inspect the data</a></li>
+  <li><a href="#why-look-for-rare-outcomes" id="toc-why-look-for-rare-outcomes" class="nav-link active" data-scroll-target="#why-look-for-rare-outcomes">Why look for rare outcomes?</a></li>
+  <li><a href="#load-and-inspect-the-data" id="toc-load-and-inspect-the-data" class="nav-link" data-scroll-target="#load-and-inspect-the-data">Load and inspect the data</a></li>
   <li><a href="#select-the-checkpoints" id="toc-select-the-checkpoints" class="nav-link" data-scroll-target="#select-the-checkpoints">Select the checkpoints</a></li>
   <li><a href="#calculate-playoff-rates-by-record" id="toc-calculate-playoff-rates-by-record" class="nav-link" data-scroll-target="#calculate-playoff-rates-by-record">Calculate playoff rates by record</a></li>
   <li><a href="#find-the-rare-playoff-paths" id="toc-find-the-rare-playoff-paths" class="nav-link" data-scroll-target="#find-the-rare-playoff-paths">Find the rare playoff paths</a></li>
   <li><a href="#investigate-the-1-5-teams" id="toc-investigate-the-1-5-teams" class="nav-link" data-scroll-target="#investigate-the-1-5-teams">Investigate the 1-5 teams</a></li>
   <li><a href="#visualize-the-six-game-checkpoint" id="toc-visualize-the-six-game-checkpoint" class="nav-link" data-scroll-target="#visualize-the-six-game-checkpoint">Visualize the six-game checkpoint</a></li>
+  <li><a href="#what-can-you-investigate-next" id="toc-what-can-you-investigate-next" class="nav-link" data-scroll-target="#what-can-you-investigate-next">What can you investigate next?</a></li>
   </ul>
 </nav>
     </div>
@@ -196,8 +227,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
+<section id="why-look-for-rare-outcomes" class="level2">
+<h2 class="anchored" data-anchor-id="why-look-for-rare-outcomes">Why look for rare outcomes?</h2>
+<p>I personally like finding rare events in datasets because they can make for interesting stories. They can also point to observations worth investigating, and that investigation can reveal a bigger picture in the data. A rare negative outcome might show us something to avoid, while a rare positive outcome can show us what went unusually well.</p>
+<p>In this tutorial, we will use NFL data from 1999 through 2025 to search for teams that made the playoffs after a bad start. I expected fewer than 5% of teams that started 1-5 to recover. The actual rate was 2.9%, and one of those teams was the 2015 Kansas City Chiefs. After beginning 1-5, Kansas City won its final ten regular-season games and finished 11-5.</p>
+<p>By the end, you will be able to use pandas to group outcomes, calculate event rates, and trace a rare result back to the observations that produced it.</p>
+</section>
 <section id="load-and-inspect-the-data" class="level2">
 <h2 class="anchored" data-anchor-id="load-and-inspect-the-data">Load and inspect the data</h2>
+<p>The dataset contains one row for each NFL team after each week of a season from 1999 through 2025. Each row shows the team’s record at that point and whether it eventually made the playoffs. We will start by importing pandas, reading the CSV file, and looking at the columns that matter most for this tutorial.</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>games <span class="op">=</span> pd.read_csv(<span class="st">"data/team_week_records.csv"</span>)</span>
@@ -205,9 +243,42 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>games[[</span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">"season"</span>, <span class="st">"team"</span>, <span class="st">"games_played"</span>, <span class="st">"record"</span>, <span class="st">"made_playoffs"</span></span>
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>]].head()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Here is what those five columns represent:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Column</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>season</code></td>
+<td>The year the season began</td>
+</tr>
+<tr class="even">
+<td><code>team</code></td>
+<td>The team’s abbreviation</td>
+</tr>
+<tr class="odd">
+<td><code>games_played</code></td>
+<td>The number of games the team had actually played</td>
+</tr>
+<tr class="even">
+<td><code>record</code></td>
+<td>The team’s wins and losses at that point</td>
+</tr>
+<tr class="odd">
+<td><code>made_playoffs</code></td>
+<td><code>True</code> if the team made the playoffs that season</td>
+</tr>
+</tbody>
+</table>
+<p>We use <code>games_played</code> instead of the NFL week number because teams have bye weeks, meaning they get a week off and do not play a game. For example, a team in Week 7 may have played only six games. Using the number of games played lets us compare teams at the same point in their seasons.</p>
 </section>
 <section id="select-the-checkpoints" class="level2">
 <h2 class="anchored" data-anchor-id="select-the-checkpoints">Select the checkpoints</h2>
+<p>Instead of looking at every point in the season, we will compare records after 2, 4, 6, and 8 games. These checkpoints let us see how a poor start becomes harder to overcome as the season continues without making the analysis too long.</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>checkpoints <span class="op">=</span> [<span class="dv">2</span>, <span class="dv">4</span>, <span class="dv">6</span>, <span class="dv">8</span>]</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>checkpoint_games <span class="op">=</span> games.loc[</span>
@@ -221,9 +292,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>checkpoint_games <span class="op">=</span> checkpoint_games.drop_duplicates([</span>
 <span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">"season"</span>, <span class="st">"team"</span>, <span class="st">"games_played"</span></span>
 <span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The <code>.isin()</code> method keeps only rows where <code>games_played</code> matches one of our four checkpoints. We then sort the rows and use <code>drop_duplicates()</code> so that each team appears only once at each checkpoint in each season. This matters because a bye week can create another row for a team even though its number of games played has not changed. Including <code>season</code> prevents records from different years for the same team from being treated as duplicates.</p>
 </section>
 <section id="calculate-playoff-rates-by-record" class="level2">
 <h2 class="anchored" data-anchor-id="calculate-playoff-rates-by-record">Calculate playoff rates by record</h2>
+<p>Next, we group teams that had the same record at the same checkpoint. The <code>groupby()</code> columns define each group, while <code>.agg()</code> creates two new summaries. <code>team_seasons</code> counts how many teams had that record, and <code>playoff_teams</code> counts how many of them made the playoffs.</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>record_summary <span class="op">=</span> checkpoint_games.groupby([</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">"games_played"</span>, <span class="st">"wins"</span>, <span class="st">"losses"</span>, <span class="st">"ties"</span>, <span class="st">"record"</span></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>]).agg(</span>
@@ -235,9 +308,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    record_summary[<span class="st">"playoff_teams"</span>]</span>
 <span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">/</span> record_summary[<span class="st">"team_seasons"</span>]</span>
 <span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>This works because <code>made_playoffs</code> contains Boolean values: <code>True</code> is counted as 1 and <code>False</code> as 0 when the column is summed. A team in a different season counts as a separate observation, which is why we call the denominator <code>team_seasons</code>. The calculation is:</p>
+<p><span class="math display">\[
+\text{Playoff rate} = \frac{\text{playoff teams}}{\text{team-seasons with that record}}
+\]</span></p>
+<p>Finally, <code>.reset_index()</code> turns the grouping columns back into regular columns so we can filter and sort the results in the next step.</p>
 </section>
 <section id="find-the-rare-playoff-paths" class="level2">
 <h2 class="anchored" data-anchor-id="find-the-rare-playoff-paths">Find the rare playoff paths</h2>
+<p>Before searching for the worst starts, we keep only records where at least one team eventually made the playoffs. Without this filter, winless records such as 0-4, 0-6, and 0-8 would come first even though no teams recovered from them. Our goal is not just to find bad starts; it is to find unlikely recoveries.</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>successful_starts <span class="op">=</span> record_summary.loc[</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    record_summary[<span class="st">"playoff_teams"</span>] <span class="op">&gt;</span> <span class="dv">0</span></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>].copy()</span>
@@ -259,9 +338,60 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>    <span class="st">"playoff_teams"</span>,</span>
 <span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>    <span class="st">"playoff_rate"</span></span>
 <span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>]]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The <code>sort_values()</code> step puts the fewest wins and most losses first within each checkpoint. We then group by <code>games_played</code>, and <code>.head(1)</code> keeps the first row in each group. Shown as percentages, the result is:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: right;">Games played</th>
+<th style="text-align: center;">Worst start followed by a playoff appearance</th>
+<th style="text-align: right;">Team-seasons</th>
+<th style="text-align: right;">Playoff teams</th>
+<th style="text-align: right;">Playoff rate</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">2</td>
+<td style="text-align: center;">0-2</td>
+<td style="text-align: right;">227</td>
+<td style="text-align: right;">25</td>
+<td style="text-align: right;">11.0%</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">4</td>
+<td style="text-align: center;">1-3</td>
+<td style="text-align: right;">194</td>
+<td style="text-align: right;">26</td>
+<td style="text-align: right;">13.4%</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">6</td>
+<td style="text-align: center;">1-5</td>
+<td style="text-align: right;">102</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">2.9%</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">8</td>
+<td style="text-align: center;">2-6</td>
+<td style="text-align: right;">114</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">1.8%</td>
+</tr>
+</tbody>
+</table>
+<p>The six-game result stood out to me. Only 3 of the 102 teams that began 1-5 made the playoffs, giving a rate of 2.9%. That was even lower than my original guess of under 5%.</p>
 </section>
 <section id="investigate-the-1-5-teams" class="level2">
 <h2 class="anchored" data-anchor-id="investigate-the-1-5-teams">Investigate the 1-5 teams</h2>
+<p>Once we find a rare result, the next step is to return to the original observations and see which teams produced it. The conditions below select teams after six games, keep only 1-5 records, and require <code>made_playoffs</code> to be <code>True</code>. We also select the final wins and losses so we can compare how each season ended.</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>one_five_teams <span class="op">=</span> checkpoint_games.loc[</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    (checkpoint_games[<span class="st">"games_played"</span>] <span class="op">==</span> <span class="dv">6</span>)</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">&amp;</span> (checkpoint_games[<span class="st">"record"</span>] <span class="op">==</span> <span class="st">"1-5"</span>)</span>
@@ -270,9 +400,42 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>]</span>
 <span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>one_five_teams.sort_values(<span class="st">"season"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: right;">Season</th>
+<th style="text-align: center;">Team</th>
+<th style="text-align: center;">Six-game record</th>
+<th style="text-align: center;">Final record</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">2015</td>
+<td style="text-align: center;">KC</td>
+<td style="text-align: center;">1-5</td>
+<td style="text-align: center;">11-5</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2018</td>
+<td style="text-align: center;">IND</td>
+<td style="text-align: center;">1-5</td>
+<td style="text-align: center;">10-6</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">2020</td>
+<td style="text-align: center;">WAS</td>
+<td style="text-align: center;">1-5</td>
+<td style="text-align: center;">7-9</td>
+</tr>
+</tbody>
+</table>
+<p>Kansas City stands out because it won every remaining regular-season game. The Chiefs became the first NFL team to start 1-5, finish on a ten-game winning streak, and make the playoffs.</p>
+<p>To me, the timing makes the result even more interesting. Andy Reid had become the Chiefs’ head coach in 2013, and this comeback came one season before Kansas City began winning consecutive AFC West titles. Patrick Mahomes later became the full-time starting quarterback in 2018. Looking back, the 2015 season feels less like an isolated strange result and more like an early sign of the franchise’s future success.</p>
 </section>
 <section id="visualize-the-six-game-checkpoint" class="level2">
 <h2 class="anchored" data-anchor-id="visualize-the-six-game-checkpoint">Visualize the six-game checkpoint</h2>
+<p>A graph makes the 1-5 result easier to compare with the other records after six games. We first keep the six-game checkpoint and remove tied records from this graph to make the labels easier to read. The tied records were still included in the earlier analysis.</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>six_game_summary <span class="op">=</span> record_summary.loc[</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    (record_summary[<span class="st">"games_played"</span>] <span class="op">==</span> <span class="dv">6</span>)</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">&amp;</span> (record_summary[<span class="st">"ties"</span>] <span class="op">==</span> <span class="dv">0</span>)</span>
@@ -299,6 +462,19 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>playoff_chart.set_xlabel(<span class="st">"Record after six games"</span>)</span>
 <span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>playoff_chart.set_ylabel(<span class="st">"Teams that made the playoffs (%)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The playoff rates are multiplied by 100 so the vertical axis displays percentages. The color list makes the 1-5 bar red and every other bar gray. Finally, pandas uses Matplotlib to create the bar chart and add the title and axis labels.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="figures/playoff_rate_after_six_games.png" class="img-fluid figure-img" alt="A bar chart of NFL playoff rates by record after six games from 1999 through 2025. The 1-5 record is highlighted in red at 2.9 percent, while the other records are gray."></p>
+<figcaption>Playoff rates generally rise as a team’s six-game record improves, while the red 1-5 bar shows a 2.9% playoff rate.</figcaption>
+</figure>
+</div>
+<p>The chart gives the rare event some context. Making the playoffs from 1-5 was possible, but teams in that position had very little room left for another loss.</p>
+</section>
+<section id="what-can-you-investigate-next" class="level2">
+<h2 class="anchored" data-anchor-id="what-can-you-investigate-next">What can you investigate next?</h2>
+<p>Using pandas, we turned weekly records into playoff rates, identified bad starts that still led to the playoffs, and traced a rare result back to the teams that produced it. The 1-5 result shows why finding a rare event is the start of an investigation, not the end. It led us to the bigger story of the 2015 Chiefs.</p>
+<p>Next, replace <code>made_playoffs</code> with <code>sb_champion</code> in the aggregation and repeat the process. What is the worst start from which a team recovered to win the Super Bowl? You can also apply this method to another sport or any dataset with groups and a final outcome. Choose meaningful checkpoints, count the outcomes, calculate their rates, and investigate the rare observations you find.</p>
 
 
 </section>
