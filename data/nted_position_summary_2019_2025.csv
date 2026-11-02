@@ -1,0 +1,7 @@
+position,sunday_type,player_games,games,mean_targets,mean_receptions,mean_receiving_yards,mean_receiving_tds,mean_carries
+RB,NTED,492,84,2.0427,1.5691,12.0691,0.0772,7.2642
+RB,Other Sunday,8286,1462,2.0987,1.6243,12.1383,0.0629,7.6947
+TE,NTED,387,84,3.0568,2.1990,24.6925,0.1809,0.0284
+TE,Other Sunday,6576,1462,3.1154,2.1665,22.5614,0.1645,0.0867
+WR,NTED,759,84,4.2622,2.7866,35.2082,0.2108,0.1739
+WR,Other Sunday,13175,1462,4.2275,2.6641,33.7945,0.2065,0.1740

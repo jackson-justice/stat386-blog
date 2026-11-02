@@ -1,0 +1,93 @@
+{
+  "source_accessed_utc": "2026-11-02T04:32:25.604633+00:00",
+  "seasons": [
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025
+  ],
+  "source_player_rows": 129812,
+  "source_player_columns": 150,
+  "source_player_rows_by_season": {
+    "2019": 17362,
+    "2020": 17602,
+    "2021": 18969,
+    "2022": 18831,
+    "2023": 18643,
+    "2024": 18983,
+    "2025": 19422
+  },
+  "source_schedule_rows": 1960,
+  "source_schedule_columns": 46,
+  "source_schedule_rows_by_season": {
+    "2019": 267,
+    "2020": 269,
+    "2021": 285,
+    "2022": 284,
+    "2023": 285,
+    "2024": 285,
+    "2025": 285
+  },
+  "schedule_duplicate_game_ids": 0,
+  "unmatched_player_rows": 0,
+  "season_mismatches_after_join": 0,
+  "week_mismatches_after_join": 0,
+  "regular_season_rows_all_positions": 124022,
+  "analysis_rows": 35840,
+  "analysis_columns": 34,
+  "duplicate_player_team_games": 0,
+  "missing_final_key_values": {
+    "game_id": 0,
+    "player_id": 0,
+    "team": 0,
+    "position": 0,
+    "game_date": 0
+  },
+  "missing_counting_values_replaced_with_zero": {
+    "targets": 0,
+    "receptions": 0,
+    "receiving_yards": 0,
+    "receiving_tds": 0,
+    "carries": 0,
+    "rushing_yards": 0,
+    "rushing_tds": 0
+  },
+  "team_games_with_zero_target_denominator": 0,
+  "player_rows_with_missing_team_target_share": 0,
+  "first_appearance_rows_with_no_prior_baseline": 3634,
+  "nted_dates": {
+    "2019": "2019-10-27",
+    "2020": "2020-10-25",
+    "2021": "2021-10-24",
+    "2022": "2022-10-23",
+    "2023": "2023-10-22",
+    "2024": "2024-10-27",
+    "2025": "2025-10-26"
+  },
+  "nted_games_by_season": {
+    "2019": 13,
+    "2020": 12,
+    "2021": 11,
+    "2022": 12,
+    "2023": 11,
+    "2024": 14,
+    "2025": 11
+  },
+  "analysis_rows_by_position": {
+    "RB": 10604,
+    "TE": 8377,
+    "WR": 16859
+  },
+  "analysis_rows_by_season": {
+    "2019": 4822,
+    "2020": 4921,
+    "2021": 5211,
+    "2022": 5175,
+    "2023": 5138,
+    "2024": 5200,
+    "2025": 5373
+  }
+}

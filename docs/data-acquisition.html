@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Jackson Justice">
+<meta name="dcterms.date" content="2026-11-01">
+
+<title>Building an NFL Dataset for National Tight Ends Day – STAT 386 Blog</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-172ba59bd5e0b52282274ba0c0cc16fc.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">STAT 386 Blog</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="./index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="./tutorial.html"> 
+<span class="menu-text">Tutorial Blog</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link active" href="./data-acquisition.html" aria-current="page"> 
+<span class="menu-text">Data Acquisition</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="./about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#the-research-question" id="toc-the-research-question" class="nav-link active" data-scroll-target="#the-research-question">The research question</a></li>
+  <li><a href="#data-source-and-scope" id="toc-data-source-and-scope" class="nav-link" data-scroll-target="#data-source-and-scope">Data source and scope</a></li>
+  <li><a href="#combining-player-statistics-with-dates" id="toc-combining-player-statistics-with-dates" class="nav-link" data-scroll-target="#combining-player-statistics-with-dates">Combining player statistics with dates</a></li>
+  <li><a href="#turning-a-holiday-rule-into-data" id="toc-turning-a-holiday-rule-into-data" class="nav-link" data-scroll-target="#turning-a-holiday-rule-into-data">Turning a holiday rule into data</a></li>
+  <li><a href="#filtering-and-selecting-useful-fields" id="toc-filtering-and-selecting-useful-fields" class="nav-link" data-scroll-target="#filtering-and-selecting-useful-fields">Filtering and selecting useful fields</a></li>
+  <li><a href="#building-reproducible-features" id="toc-building-reproducible-features" class="nav-link" data-scroll-target="#building-reproducible-features">Building reproducible features</a>
+  <ul class="collapse">
+  <li><a href="#team-tight-end-target-share" id="toc-team-tight-end-target-share" class="nav-link" data-scroll-target="#team-tight-end-target-share">Team tight end target share</a></li>
+  <li><a href="#player-season-baselines" id="toc-player-season-baselines" class="nav-link" data-scroll-target="#player-season-baselines">Player-season baselines</a></li>
+  <li><a href="#other-missing-values" id="toc-other-missing-values" class="nav-link" data-scroll-target="#other-missing-values">Other missing values</a></li>
+  </ul></li>
+  <li><a href="#validation-and-saved-outputs" id="toc-validation-and-saved-outputs" class="nav-link" data-scroll-target="#validation-and-saved-outputs">Validation and saved outputs</a></li>
+  <li><a href="#a-limited-descriptive-preview" id="toc-a-limited-descriptive-preview" class="nav-link" data-scroll-target="#a-limited-descriptive-preview">A limited descriptive preview</a></li>
+  <li><a href="#limits-of-this-dataset" id="toc-limits-of-this-dataset" class="nav-link" data-scroll-target="#limits-of-this-dataset">Limits of this dataset</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Building an NFL Dataset for National Tight Ends Day</h1>
+<p class="subtitle lead">Provisional Data Acquisition Blog</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Jackson Justice </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">November 1, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="the-research-question" class="level2">
+<h2 class="anchored" data-anchor-id="the-research-question">The research question</h2>
+<p>National Tight Ends Day (NTED) takes place on the fourth Sunday in October. The eventual research question is: <strong>Do NFL tight ends perform better on NTED than on other Sundays, and is any difference specific to tight ends or also visible among wide receivers and running backs?</strong></p>
+<p>Answering that question requires more than one table. Weekly player statistics contain the performance measures, while the schedule supplies the actual date of each game. This post focuses on acquiring, joining, checking, and preparing those data. It includes only a small descriptive preview because a statistical comparison belongs in a later analysis.</p>
+</section>
+<section id="data-source-and-scope" class="level2">
+<h2 class="anchored" data-anchor-id="data-source-and-scope">Data source and scope</h2>
+<p>The data come from <a href="https://github.com/nflverse">nflverse</a>, a community project that maintains public NFL datasets. The Python package <a href="https://nflreadpy.nflverse.com/api/load_functions/">nflreadpy</a> provides functions for downloading weekly player statistics and schedules. This project uses seven completed regular seasons, 2019 through 2025.</p>
+<p>The two calls are short:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> nflreadpy <span class="im">as</span> nfl</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>seasons <span class="op">=</span> <span class="bu">list</span>(<span class="bu">range</span>(<span class="dv">2019</span>, <span class="dv">2026</span>))</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>player_stats <span class="op">=</span> nfl.load_player_stats(</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    seasons, summary_level<span class="op">=</span><span class="st">"week"</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>).to_pandas()</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>schedules <span class="op">=</span> nfl.load_schedules(seasons).to_pandas()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The acquisition run on November 1, 2026 (November 2 in UTC) returned 129,812 player-stat rows and 1,960 schedule rows. The player table had 150 columns, and the schedule had 46. These totals include postseason records, which are removed later.</p>
+<p>The original proposal reported a smaller feasibility check for 2025: 19,422 player-stat rows with 150 columns and 285 schedule rows with 46 columns. The new run reproduced all four of those values. This matters because the proposal values are no longer being treated as unverified current output.</p>
+<p>The <code>nflreadpy</code> software is distributed under the MIT License. At the time of acquisition, the nflverse data repository identified these data under <a href="https://github.com/nflverse/nflverse-data/blob/main/LICENSE.md">Creative Commons Attribution 4.0</a>. That license permits sharing with attribution, but the release page and license should be checked again before redistributing the cleaned file. nflverse must remain credited, and its data come without a warranty.</p>
+</section>
+<section id="combining-player-statistics-with-dates" class="level2">
+<h2 class="anchored" data-anchor-id="combining-player-statistics-with-dates">Combining player statistics with dates</h2>
+<p>The shared key is <code>game_id</code>. The schedule should contain exactly one row for each game, while the player table contains many rows for that game. That makes this a <strong>many-to-one</strong> join, not a many-to-many join.</p>
+<p>Before merging, the code verifies that schedule <code>game_id</code> values are unique. Pandas then enforces the expected relationship:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>joined <span class="op">=</span> player_stats.merge(</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    schedule_for_join,</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    on<span class="op">=</span><span class="st">"game_id"</span>,</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    how<span class="op">=</span><span class="st">"left"</span>,</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    validate<span class="op">=</span><span class="st">"many_to_one"</span>,</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    indicator<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The indicator identifies any player row without a schedule match. The code also compares the season and week supplied by the two sources after the merge. These checks produced the following results:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Validation check</th>
+<th style="text-align: right;">Result</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Duplicate schedule <code>game_id</code> values</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="even">
+<td>Unmatched player-stat rows</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="odd">
+<td>Season disagreements after joining</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="even">
+<td>Week disagreements after joining</td>
+<td style="text-align: right;">0</td>
+</tr>
+</tbody>
+</table>
+<p>All 129,812 player-stat rows matched one schedule row. This confirms the 2025 proposal result for the full seven-season acquisition rather than assuming that one season represented all years.</p>
+</section>
+<section id="turning-a-holiday-rule-into-data" class="level2">
+<h2 class="anchored" data-anchor-id="turning-a-holiday-rule-into-data">Turning a holiday rule into data</h2>
+<p>NTED is defined by a calendar rule rather than an NFL week number. The fourth Sunday can move between dates and weeks from year to year, so hard-coding one week would misclassify some games. The pipeline finds the first Sunday in October and adds 21 days:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> datetime <span class="im">import</span> date</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> fourth_sunday_in_october(year):</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    first <span class="op">=</span> date(year, <span class="dv">10</span>, <span class="dv">1</span>)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    days_until_sunday <span class="op">=</span> (<span class="dv">6</span> <span class="op">-</span> first.weekday()) <span class="op">%</span> <span class="dv">7</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> date(year, <span class="dv">10</span>, <span class="dv">1</span> <span class="op">+</span> days_until_sunday <span class="op">+</span> <span class="dv">21</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Only a game played on that actual date receives <code>is_nted = True</code>. A separate <code>is_sunday</code> field makes it possible to compare NTED with other Sundays without accidentally including Thursday or Monday games.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: right;">Season</th>
+<th style="text-align: center;">Computed NTED date</th>
+<th style="text-align: right;">NFL games on date</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">2019</td>
+<td style="text-align: center;">October 27</td>
+<td style="text-align: right;">13</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2020</td>
+<td style="text-align: center;">October 25</td>
+<td style="text-align: right;">12</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">2021</td>
+<td style="text-align: center;">October 24</td>
+<td style="text-align: right;">11</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2022</td>
+<td style="text-align: center;">October 23</td>
+<td style="text-align: right;">12</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">2023</td>
+<td style="text-align: center;">October 22</td>
+<td style="text-align: right;">11</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2024</td>
+<td style="text-align: center;">October 27</td>
+<td style="text-align: right;">14</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">2025</td>
+<td style="text-align: center;">October 26</td>
+<td style="text-align: right;">11</td>
+</tr>
+</tbody>
+</table>
+<p>There are 84 NTED games across seven dates. The changing number of games is expected because bye weeks and the weekly schedule differ by season.</p>
+</section>
+<section id="filtering-and-selecting-useful-fields" class="level2">
+<h2 class="anchored" data-anchor-id="filtering-and-selecting-useful-fields">Filtering and selecting useful fields</h2>
+<p>The joined data are restricted to records where both source tables identify the game as regular season. The position filter then keeps tight ends (<code>TE</code>), wide receivers (<code>WR</code>), and running backs (<code>RB</code>). The final file has 35,840 player-game rows and 34 columns:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: center;">Position</th>
+<th style="text-align: right;">Player-game rows</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">TE</td>
+<td style="text-align: right;">8,377</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">WR</td>
+<td style="text-align: right;">16,859</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">RB</td>
+<td style="text-align: right;">10,604</td>
+</tr>
+</tbody>
+</table>
+<p>The retained columns fall into four groups:</p>
+<ul>
+<li>identifiers and context: season, week, game ID, date, teams, player ID, player name, and position;</li>
+<li>production: targets, receptions, receiving yards, receiving touchdowns, carries, rushing yards, and rushing touchdowns;</li>
+<li>calendar features: Sunday and NTED flags, the season’s NTED week, and week relative to NTED;</li>
+<li>constructed context: team targets, tight end targets, tight end target share, and player-season pregame baselines.</li>
+</ul>
+<p>Keeping the game ID and date is important for auditing. Keeping both receiving and rushing measures also prevents the comparison among positions from focusing only on one kind of opportunity.</p>
+</section>
+<section id="building-reproducible-features" class="level2">
+<h2 class="anchored" data-anchor-id="building-reproducible-features">Building reproducible features</h2>
+<section id="team-tight-end-target-share" class="level3">
+<h3 class="anchored" data-anchor-id="team-tight-end-target-share">Team tight end target share</h3>
+<p>Team tight end target share is calculated as</p>
+<p><span class="math display">\[
+\text{TE target share} =
+\frac{\text{targets to team tight ends}}
+{\text{targets to all players on the team}}.
+\]</span></p>
+<p>This feature is created <strong>before</strong> filtering to TE, WR, and RB. As a result, the denominator includes every recorded target for the team, even if a target went to another position. If the denominator were zero, the share would be missing instead of being labeled zero. The acquired data had no team-game with a zero target denominator, but the rule remains in the code so a future run does not silently divide by zero.</p>
+</section>
+<section id="player-season-baselines" class="level3">
+<h3 class="anchored" data-anchor-id="player-season-baselines">Player-season baselines</h3>
+<p>Each row also includes the player’s average targets, receptions, receiving yards, receiving touchdowns, and carries in earlier appearances from that season. The current game is excluded. For example, a player’s baseline entering Week 8 uses only that player’s available Weeks 1–7 rows.</p>
+<p>This choice prevents the outcome being compared from also changing its own baseline. A player’s first recorded appearance has no earlier evidence, so those baseline fields are intentionally missing. There are 3,634 such first-appearance rows. These are meaningful missing values and are not replaced by zero.</p>
+</section>
+<section id="other-missing-values" class="level3">
+<h3 class="anchored" data-anchor-id="other-missing-values">Other missing values</h3>
+<p>The source had no missing values in the seven retained box-score counting columns after the regular-season filter. The pipeline is still explicit: if a future player appearance row has a missing counting value, it records the number of replacements and fills that value with zero. It does not apply a blanket fill to dates, identifiers, shares, or baselines.</p>
+</section>
+</section>
+<section id="validation-and-saved-outputs" class="level2">
+<h2 class="anchored" data-anchor-id="validation-and-saved-outputs">Validation and saved outputs</h2>
+<p>Several final checks protect the unit of observation and the intended scope:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Check</th>
+<th style="text-align: right;">Verified result</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Regular-season rows before position filtering</td>
+<td style="text-align: right;">124,022</td>
+</tr>
+<tr class="even">
+<td>Final TE/WR/RB player-game rows</td>
+<td style="text-align: right;">35,840</td>
+</tr>
+<tr class="odd">
+<td>Final columns</td>
+<td style="text-align: right;">34</td>
+</tr>
+<tr class="even">
+<td>Duplicate player-team-game rows</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="odd">
+<td>Missing key identifiers or dates</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="even">
+<td>Player rows with missing team target share</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="odd">
+<td>NTED seasons represented</td>
+<td style="text-align: right;">7 of 7</td>
+</tr>
+</tbody>
+</table>
+<p>The main output is <code>data/nted_player_games_2019_2025.parquet</code>. Parquet preserves data types and stores the table in about 0.6 MB, making it more compact than a CSV version of the same records. The pipeline also writes <code>data/nted_validation_2019_2025.json</code> and <code>data/nted_position_summary_2019_2025.csv</code>. Those smaller files make the reported checks and preview table auditable without rerunning the download.</p>
+<p>The complete workflow is in <code>acquire_nted_data.py</code>. From the project directory, it can be reproduced with:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>python <span class="op">-</span>m venv <span class="op">.</span><span class="fu">venv</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="op">.</span>\<span class="op">.</span><span class="fu">venv</span>\Scripts\python<span class="op">.</span><span class="fu">exe</span> <span class="op">-</span>m pip install <span class="op">-</span>r requirements<span class="op">.</span><span class="fu">txt</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="op">.</span>\<span class="op">.</span><span class="fu">venv</span>\Scripts\python<span class="op">.</span><span class="fu">exe</span> acquire_nted_data<span class="op">.</span><span class="fu">py</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="op">.</span>\<span class="op">.</span><span class="fu">venv</span>\Scripts\python<span class="op">.</span><span class="fu">exe</span> <span class="op">-</span>m unittest discover <span class="op">-</span>s tests <span class="op">-</span>v</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The code writes new NTED-specific filenames, so it does not overwrite the existing tutorial data or figure.</p>
+</section>
+<section id="a-limited-descriptive-preview" class="level2">
+<h2 class="anchored" data-anchor-id="a-limited-descriptive-preview">A limited descriptive preview</h2>
+<p>The following means describe player-game rows on the 84 NTED games and on the other Sunday games in the seven seasons. They are a data check and a starting point, not a test of whether the holiday caused a change.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 17%">
+<col style="width: 13%">
+<col style="width: 13%">
+<col style="width: 13%">
+<col style="width: 13%">
+<col style="width: 13%">
+<col style="width: 13%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: center;">Position</th>
+<th style="text-align: left;">Sunday type</th>
+<th style="text-align: right;">Player-games</th>
+<th style="text-align: right;">Mean targets</th>
+<th style="text-align: right;">Mean receptions</th>
+<th style="text-align: right;">Mean receiving yards</th>
+<th style="text-align: right;">Mean receiving TDs</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">TE</td>
+<td style="text-align: left;">NTED</td>
+<td style="text-align: right;">387</td>
+<td style="text-align: right;">3.06</td>
+<td style="text-align: right;">2.20</td>
+<td style="text-align: right;">24.69</td>
+<td style="text-align: right;">0.181</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">TE</td>
+<td style="text-align: left;">Other Sunday</td>
+<td style="text-align: right;">6,576</td>
+<td style="text-align: right;">3.12</td>
+<td style="text-align: right;">2.17</td>
+<td style="text-align: right;">22.56</td>
+<td style="text-align: right;">0.165</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">WR</td>
+<td style="text-align: left;">NTED</td>
+<td style="text-align: right;">759</td>
+<td style="text-align: right;">4.26</td>
+<td style="text-align: right;">2.79</td>
+<td style="text-align: right;">35.21</td>
+<td style="text-align: right;">0.211</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">WR</td>
+<td style="text-align: left;">Other Sunday</td>
+<td style="text-align: right;">13,175</td>
+<td style="text-align: right;">4.23</td>
+<td style="text-align: right;">2.66</td>
+<td style="text-align: right;">33.79</td>
+<td style="text-align: right;">0.207</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">RB</td>
+<td style="text-align: left;">NTED</td>
+<td style="text-align: right;">492</td>
+<td style="text-align: right;">2.04</td>
+<td style="text-align: right;">1.57</td>
+<td style="text-align: right;">12.07</td>
+<td style="text-align: right;">0.077</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">RB</td>
+<td style="text-align: left;">Other Sunday</td>
+<td style="text-align: right;">8,286</td>
+<td style="text-align: right;">2.10</td>
+<td style="text-align: right;">1.62</td>
+<td style="text-align: right;">12.14</td>
+<td style="text-align: right;">0.063</td>
+</tr>
+</tbody>
+</table>
+<p>The tight end means do not all move in the same direction: targets are slightly lower on NTED, while receptions, receiving yards, and receiving touchdowns are slightly higher. Wide receivers also have higher means for several receiving measures on NTED, so the raw pattern is not obviously unique to tight ends. These small descriptive differences could reflect the mix of players, teams, and opponents rather than NTED itself.</p>
+</section>
+<section id="limits-of-this-dataset" class="level2">
+<h2 class="anchored" data-anchor-id="limits-of-this-dataset">Limits of this dataset</h2>
+<p>Only seven NTED dates are available, and bye weeks mean that not every team plays on each date. A weekly player-stat table also does not fully describe injuries, inactive players, snap counts, routes, or other differences in playing opportunity. Players who appear in the data may have very different roles, and missing appearances should not automatically be interpreted as zero performance.</p>
+<p>Comparisons with nearby weeks can help identify whether an apparent change is isolated to NTED, while WR and RB comparisons provide useful context. Player-season baselines and team target share can also describe opportunity more carefully. Even with those additions, this observational dataset cannot establish that NTED causes performance to change.</p>
+<p>This draft remains provisional until the complete assignment rubric is available.</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

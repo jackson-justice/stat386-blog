@@ -10,6 +10,8 @@ website:
         text: Home
       - href: tutorial.qmd
         text: Tutorial Blog
+      - href: data-acquisition.qmd
+        text: Data Acquisition
       - href: about.qmd
         text: About
 
@@ -20,5 +22,4 @@ format:
       - brand
     css: styles.css
     toc: true
-
 
