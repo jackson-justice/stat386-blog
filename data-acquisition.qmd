@@ -35,11 +35,11 @@ The download returned 129,812 player-stat rows and 1,960 schedule rows. It also 
 
 The full acquisition process has five main steps:
 
-1. Check that each schedule `game_id` is unique.
-2. Join the many player rows for a game to its one schedule row using `game_id`.
-3. Keep regular-season TE, WR, and RB observations.
-4. Calculate each season's fourth Sunday in October and flag games played on that exact date.
-5. Create opportunity features and save the result as Parquet.
+1.  Check that each schedule `game_id` is unique.
+2.  Join the many player rows for a game to its one schedule row using `game_id`.
+3.  Keep regular-season TE, WR, and RB observations.
+4.  Calculate each season's fourth Sunday in October and flag games played on that exact date.
+5.  Create opportunity features and save the result as Parquet.
 
 The join was set to `validate="many_to_one"` so pandas would stop if the schedule unexpectedly contained duplicate game IDs. All 129,812 player rows matched a schedule record, with no disagreements in season or week.
 
@@ -54,10 +54,10 @@ Second, player-season baselines summarize a player's targets, receptions, receiv
 The analysis-ready file has **35,840 player-game observations and 34 variables**, comfortably above the assignment minimum of 200 observations and five variables. It contains identifiers, dates, teams, position, targets, receptions, receiving yards and touchdowns, carries and rushing production, NTED flags, team target share, and prior player-season averages.
 
 | Position | Player-game observations |
-|:---:|---:|
-| TE | 8,377 |
-| WR | 16,859 |
-| RB | 10,604 |
+|:--------:|-------------------------:|
+|    TE    |                    8,377 |
+|    WR    |                   16,859 |
+|    RB    |                   10,604 |
 
 Validation found no duplicate player-team-game rows, missing key identifiers, unmatched schedule records, or zero target denominators. The seven retained box-score variables also had no missing values. The 3,634 missing baseline rows are expected first appearances, not data errors.
 
@@ -77,4 +77,4 @@ These are descriptive averages, not proof that the holiday changes performance. 
 
 The [nflreadpy loading guide](https://nflreadpy.nflverse.com/api/load_functions/) documents other available NFL tables, while the [nflverse organization](https://github.com/nflverse) provides source details and data updates. The next analysis can compare NTED with surrounding weeks and use the baseline and team-share features to account for differences in opportunity.
 
-<!-- Before submission: add a live link here to the separate GitHub repository containing the acquisition code, README, and distributable data. Do not link the blog repository. -->
+The complete [acquisition code, documentation, tests, and cleaned dataset are available in a separate GitHub repository](https://github.com/jackson-justice/nfl-nted-data).

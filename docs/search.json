@@ -109,7 +109,7 @@
     "href": "data-acquisition.html#resources-and-next-steps",
     "title": "Building an NFL Dataset for National Tight Ends Day",
     "section": "Resources and next steps",
-    "text": "Resources and next steps\nThe nflreadpy loading guide documents other available NFL tables, while the nflverse organization provides source details and data updates. The next analysis can compare NTED with surrounding weeks and use the baseline and team-share features to account for differences in opportunity."
+    "text": "Resources and next steps\nThe nflreadpy loading guide documents other available NFL tables, while the nflverse organization provides source details and data updates. The next analysis can compare NTED with surrounding weeks and use the baseline and team-share features to account for differences in opportunity.\nThe complete acquisition code, documentation, tests, and cleaned dataset are available in a separate GitHub repository."
   },
   {
     "objectID": "about.html",
