@@ -2,8 +2,8 @@
 
 The `nted_*_2019_2025` files were derived from the
 [nflverse-data](https://github.com/nflverse/nflverse-data) weekly player
-statistics and schedules using `nflreadpy`. They were acquired on 2026-11-01
-Mountain Time (2026-11-02 UTC).
+statistics and schedules using `nflreadpy`. The latest acquisition run was on
+2026-11-02 Mountain Time and UTC.
 
 The source tables were joined, restricted to 2019--2025 regular-season TE,
 WR, and RB player-games, and modified with calendar, prior player-season, and

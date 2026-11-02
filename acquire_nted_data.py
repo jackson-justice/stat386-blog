@@ -10,15 +10,22 @@ import json
 from datetime import date, datetime, timezone
 from pathlib import Path
 
+import matplotlib
 import numpy as np
 import pandas as pd
 
 
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
+
 PROJECT_DIR = Path(__file__).resolve().parent
 DATA_DIR = PROJECT_DIR / "data"
+FIGURE_DIR = PROJECT_DIR / "figures"
 OUTPUT_PATH = DATA_DIR / "nted_player_games_2019_2025.parquet"
 VALIDATION_PATH = DATA_DIR / "nted_validation_2019_2025.json"
 SUMMARY_PATH = DATA_DIR / "nted_position_summary_2019_2025.csv"
+FIGURE_PATH = FIGURE_DIR / "nted_mean_receiving_yards.png"
 
 SEASONS = list(range(2019, 2026))
 POSITIONS = {"TE", "WR", "RB"}
@@ -366,14 +373,47 @@ def make_position_summary(analysis: pd.DataFrame) -> pd.DataFrame:
     )
 
 
+def make_eda_figure(summary: pd.DataFrame) -> None:
+    """Plot mean receiving yards by position and Sunday type."""
+    plot_data = (
+        summary.pivot(
+            index="position",
+            columns="sunday_type",
+            values="mean_receiving_yards",
+        )
+        .reindex(["TE", "WR", "RB"])
+        .loc[:, ["Other Sunday", "NTED"]]
+    )
+    ax = plot_data.plot.bar(
+        color=["#9AA0A6", "#4C78A8"],
+        figsize=(8, 5),
+        width=0.72,
+    )
+    ax.set_title("Mean Receiving Yards on NTED and Other Sundays, 2019–2025")
+    ax.set_xlabel("Position")
+    ax.set_ylabel("Mean receiving yards per player-game")
+    ax.tick_params(axis="x", rotation=0)
+    ax.legend(title="")
+    ax.grid(axis="y", alpha=0.25)
+    ax.set_axisbelow(True)
+    for container in ax.containers:
+        ax.bar_label(container, fmt="%.1f", padding=3, fontsize=9)
+    figure = ax.get_figure()
+    figure.tight_layout()
+    figure.savefig(FIGURE_PATH, dpi=200, bbox_inches="tight")
+    plt.close(figure)
+
+
 def main() -> None:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
+    FIGURE_DIR.mkdir(parents=True, exist_ok=True)
     player_stats, schedules = load_sources(SEASONS)
     analysis, validation = join_and_prepare(player_stats, schedules)
     summary = make_position_summary(analysis)
 
     analysis.to_parquet(OUTPUT_PATH, index=False)
     summary.to_csv(SUMMARY_PATH, index=False, float_format="%.4f")
+    make_eda_figure(summary)
     VALIDATION_PATH.write_text(
         json.dumps(validation, indent=2) + "\n", encoding="utf-8"
     )
@@ -382,6 +422,7 @@ def main() -> None:
     print(f"\nSaved {OUTPUT_PATH.relative_to(PROJECT_DIR)}")
     print(f"Saved {SUMMARY_PATH.relative_to(PROJECT_DIR)}")
     print(f"Saved {VALIDATION_PATH.relative_to(PROJECT_DIR)}")
+    print(f"Saved {FIGURE_PATH.relative_to(PROJECT_DIR)}")
 
 
 if __name__ == "__main__":
